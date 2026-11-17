@@ -85,7 +85,7 @@ P là tiền gốc, r là lãi suất tháng, n là số kỳ. Nếu r = 0 thì 
 
 ### 3.4 Thanh toán mô phỏng
 - Chỉ kỳ hợp lệ, chưa thanh toán mới được thanh toán.
-- OTP gửi đến email đã xác thực; có hạn dùng, chỉ dùng một lần và giới hạn số lần thử.
+- OTP phải được gửi qua SMTP tới email thật đã xác thực của người dùng; có hạn dùng, chỉ dùng một lần và giới hạn số lần thử. Không dùng OTP giả chỉ hiển thị trên UI hoặc trả OTP trong API response.
 - Không trả OTP trong API response hoặc ghi vào log.
 - Mỗi yêu cầu thanh toán có idempotency key.
 - Một kỳ không được ghi nhận thành công nhiều lần.
@@ -155,18 +155,18 @@ Payment Service là nguồn dữ liệu chuẩn cho lịch sử giao dịch; Loa
 |---|---|
 | Frontend | React + TypeScript |
 | UI | Tailwind CSS |
-| User Service | Django REST Framework |
-| Loan Service | Django REST Framework |
-| Payment Service | FastAPI |
+| User Service | Python + FastAPI |
+| Loan Service | Python + FastAPI |
+| Payment Service | Python + FastAPI |
 | Database | PostgreSQL |
 | API Gateway | Nginx |
-| Email | SMTP |
+| Email | SMTP gửi email thật tới hộp thư người dùng |
 | API testing | Postman |
 | Automated testing | Pytest |
 | Container | Docker Compose |
 | Version control | Git + GitHub |
 
-Đây là stack mục tiêu. Trước khi thay đổi code hiện tại, cần kiểm tra repository và giữ lại công nghệ đã triển khai tốt nếu phù hợp.
+**Quy định thống nhất:** toàn bộ backend microservices phải dùng Python + FastAPI. Không triển khai service backend bằng Django, Flask, Node.js hoặc ngôn ngữ/framework backend khác. Frontend giữ công nghệ frontend riêng. Đây là định hướng triển khai cho cả giữa kỳ và cuối kỳ; cần kiểm tra source code trước khi thay đổi cấu trúc hiện tại.
 
 ## 6. API dự kiến
 
