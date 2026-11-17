@@ -65,6 +65,8 @@ flowchart TD
 
 ## 6. Backlog chi tiết
 
+Đặc tả nghiệp vụ, ERD và API contract đã chốt nằm tại [F168_BUSINESS_RULES_ERD_API.md](F168_BUSINESS_RULES_ERD_API.md). Các task Phase 0/3/4/6 phải triển khai theo tài liệu này.
+
 ### Phase 0 — Xác nhận yêu cầu và công nghệ
 
 **Mục tiêu:** tránh dựng kiến trúc hoặc chọn stack sai so với source code/rubric của môn học.
@@ -75,7 +77,7 @@ flowchart TD
 | P0-02 | Xác nhận các thành viên và phần việc | Bảng phân công, người phụ trách từng service | NOT STARTED |
 | P0-03 | Chốt stack cho frontend/backend | Phiên bản runtime/framework được ghi rõ | NOT STARTED |
 | P0-04 | Chốt cách chạy local và Docker | Quy trình chạy thống nhất cho cả nhóm | NOT STARTED |
-| P0-05 | Chốt quy tắc xét duyệt, lãi suất, kỳ hạn, ngày đến hạn | Bộ business rules có ví dụ tính toán | NOT STARTED |
+| P0-05 | Chốt rule xét duyệt và repayment policy | Đã chốt Equal Principal, fixed rate, ngày tạo Loan sau duyệt, không trả trước, quá hạn chỉ OVERDUE không phí phạt; còn ngưỡng auto-approval cần chốt | IN PROGRESS |
 | P0-06 | Chốt xác thực giữa service | JWT/API key hoặc cơ chế nội bộ, có mô tả luồng | NOT STARTED |
 
 **Điều kiện hoàn tất phase:** nhóm thống nhất stack và các quy tắc nghiệp vụ có ảnh hưởng trực tiếp đến database/API. Không tự ý bắt đầu code ba service với các giả định khác nhau.
@@ -121,14 +123,14 @@ flowchart TD
 
 | ID | Công việc | Đầu ra / tiêu chí nghiệm thu | Trạng thái |
 |---|---|---|---|
-| P3-01 | Thiết kế Loan DB và migrations | loan_products, loan_applications, loans, installments | NOT STARTED |
+| P3-01 | Thiết kế Loan DB và migrations | ERD loan_products, loan_applications, loans, installments, settlement_operations; constraints/indexes/ownership | NOT STARTED |
 | P3-02 | API danh sách/chi tiết gói vay | Chỉ trả các gói được phép hiển thị | NOT STARTED |
 | P3-03 | Admin CRUD gói vay | Validate hạn mức, lãi suất, kỳ hạn, trạng thái | NOT STARTED |
 | P3-04 | Tích hợp xác minh người dùng | Loan Service xác minh tài khoản/email qua User Service | NOT STARTED |
 | P3-05 | Tạo đơn vay | Validate product, amount, term và quyền sở hữu | NOT STARTED |
 | P3-06 | Implement approval rules | Mỗi rule có test đạt/không đạt và lý do từ chối | NOT STARTED |
 | P3-07 | Tạo loan khi approved | Application, loan được ghi nhất quán trong Loan DB | NOT STARTED |
-| P3-08 | Tính lịch trả góp | Có test công thức, lãi suất 0%, làm tròn và kỳ cuối | NOT STARTED |
+| P3-08 | Tính lịch Equal Principal, fixed rate | Gốc chia đều; lãi theo opening principal × annual rate/12; test VND rounding, kỳ cuối, rate 0 và due date | NOT STARTED |
 | P3-09 | API khoản vay và installments | Người dùng chỉ xem khoản vay của mình | NOT STARTED |
 | P3-10 | Admin monitoring APIs | Admin xem được đơn, khoản vay theo quyền | NOT STARTED |
 | P3-11 | Unit/integration tests | Bao phủ rule, tính tiền, quyền và trạng thái | NOT STARTED |
@@ -145,7 +147,7 @@ flowchart TD
 | P4-02 | Yêu cầu OTP thanh toán qua SMTP thật | Payment Service gửi tới email đã xác thực; kiểm thử nhận email, hết hạn và dùng một lần | NOT STARTED |
 | P4-03 | Xác thực OTP thanh toán | OTP đúng/sai/hết hạn/dùng lại được xử lý | NOT STARTED |
 | P4-04 | Tạo transaction PENDING | Lưu operation ID và idempotency key duy nhất | NOT STARTED |
-| P4-05 | Tích hợp Loan Service | Gọi API validate/settle kỳ, không truy cập Loan DB | NOT STARTED |
+| P4-05 | Tích hợp Loan Service | Internal settlement API idempotent bằng operation_id; Payment không truy cập Loan DB; amount lấy từ Loan Service | NOT STARTED |
 | P4-06 | Cập nhật kết quả giao dịch | SUCCESS/FAILED phản ánh kết quả Loan Service | NOT STARTED |
 | P4-07 | Retry an toàn khi timeout | Retry cùng operation ID không trừ tiền/đánh dấu kỳ lần hai | NOT STARTED |
 | P4-08 | API lịch sử và chi tiết giao dịch | User chỉ xem giao dịch thuộc mình; Admin có quyền giám sát | NOT STARTED |
@@ -181,7 +183,7 @@ flowchart TD
 | P6-01 | Test API contract | Request/response và HTTP status đúng tài liệu | NOT STARTED |
 | P6-02 | Test phân quyền | Customer không gọi được API admin hoặc dữ liệu user khác | NOT STARTED |
 | P6-03 | Test OTP security | Hết hạn, brute-force limit, replay, resend | NOT STARTED |
-| P6-04 | Test loan calculation | So sánh kết quả với bộ test case tính tay | NOT STARTED |
+| P6-04 | Test loan calculation | Equal Principal, fixed rate, VND rounding, kỳ cuối, due date và tổng gốc đối chiếu test tính tay | NOT STARTED |
 | P6-05 | Test duplicate payment | Gửi nhiều request cùng idempotency key | NOT STARTED |
 | P6-06 | Test concurrency | Hai request thanh toán đồng thời cùng kỳ và khác kỳ | NOT STARTED |
 | P6-07 | Test service unavailable/timeout | Hành vi retry, trạng thái PENDING và recovery rõ ràng | NOT STARTED |
