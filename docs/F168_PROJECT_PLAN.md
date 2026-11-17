@@ -2,11 +2,13 @@
 
 > **Đề tài:** Loan Installment  
 > **Tên ứng dụng:** F168  
-> **Trạng thái:** Baseline thiết kế; cần đối chiếu rubric chính thức và source code trước khi triển khai.
+ > **Trạng thái:** Đề tài Loan Installment đã được nhóm xác nhận; backend thống nhất Python + FastAPI; email dùng SMTP gửi tới hộp thư thật. Thiết kế là baseline, chưa phải bằng chứng implementation.
 
 ## 1. Định hướng sản phẩm
 
-F168 là ứng dụng mô phỏng quy trình đăng ký vay và thanh toán khoản vay theo kỳ. Phục vụ mục đích học tập; không giải ngân tiền thật, không kết nối ngân hàng và không xử lý tiền thật.
+F168 là ứng dụng mô phỏng quy trình đăng ký vay, xét duyệt khoản vay và thanh toán khoản vay theo kỳ (Loan Installment). Nhóm đã xác nhận đây là đề tài chính thức của dự án. Phục vụ mục đích học tập; không giải ngân tiền thật, không kết nối ngân hàng và không xử lý tiền thật.
+
+**Lưu ý về rubric đã cung cấp:** phiếu chấm giữa kỳ trong tài liệu đính kèm có các mô tả nghiệp vụ thanh toán học phí (tra cứu học phí, gạch nợ học phí, số dư tài khoản). Những nghiệp vụ đó không tự động áp dụng cho đề tài Loan Installment. F168 sẽ ánh xạ các tiêu chí kỹ thuật chung như Microservices, REST API, Database, OTP/email, Transaction/Concurrency, UI integration, deployment và demo sang nghiệp vụ vay trả góp. Không bổ sung chức năng học phí vào F168.
 
 | Hạng mục | Quyết định |
 |---|---|
@@ -85,7 +87,9 @@ P là tiền gốc, r là lãi suất tháng, n là số kỳ. Nếu r = 0 thì 
 
 ### 3.4 Thanh toán mô phỏng
 - Chỉ kỳ hợp lệ, chưa thanh toán mới được thanh toán.
-- OTP phải được gửi qua SMTP tới email thật đã xác thực của người dùng; có hạn dùng, chỉ dùng một lần và giới hạn số lần thử. Không dùng OTP giả chỉ hiển thị trên UI hoặc trả OTP trong API response.
+- OTP xác thực tài khoản do User Service tạo và gửi qua SMTP tới email người dùng đăng ký.
+- OTP xác nhận thanh toán do Payment Service tạo và gửi qua SMTP tới email đã xác thực.
+- Cả hai OTP phải có hạn dùng, chỉ dùng một lần, giới hạn số lần thử; lưu dạng hash và không trả OTP trong API response hoặc ghi vào log.
 - Không trả OTP trong API response hoặc ghi vào log.
 - Mỗi yêu cầu thanh toán có idempotency key.
 - Một kỳ không được ghi nhận thành công nhiều lần.
@@ -119,7 +123,7 @@ flowchart TB
 ~~~
 
 ### User Service
-Trách nhiệm: đăng ký, đăng nhập, xác thực, hồ sơ, role và gửi OTP email. Database riêng gồm:
+Trách nhiệm: đăng ký, đăng nhập, xác thực, hồ sơ, role và gửi OTP email xác thực tài khoản. User Service gửi OTP tài khoản qua SMTP. Database riêng gồm:
 - users: email, password hash, role, trạng thái, email verified.
 - user_profiles: thông tin hồ sơ.
 - otp_codes: OTP đã hash, mục đích, hạn dùng, số lần thử, trạng thái.
@@ -135,7 +139,7 @@ Trách nhiệm: gói vay, đơn đăng ký, rule xét duyệt, khoản vay, lị
 Loan Service là nguồn dữ liệu chuẩn cho trạng thái khoản vay, kỳ trả góp và dư nợ.
 
 ### Payment Service
-Trách nhiệm: OTP xác nhận thanh toán, tiếp nhận yêu cầu, quản lý giao dịch và idempotency. Database riêng gồm:
+Trách nhiệm: OTP xác nhận thanh toán, tiếp nhận yêu cầu, quản lý giao dịch và idempotency. Payment Service gửi OTP thanh toán qua SMTP tới email đã xác thực do User Service cung cấp. Database riêng gồm:
 - payment_otps
 - transactions
 - payment_attempts (nếu cần audit/debug).
@@ -160,7 +164,7 @@ Payment Service là nguồn dữ liệu chuẩn cho lịch sử giao dịch; Loa
 | Payment Service | Python + FastAPI |
 | Database | PostgreSQL |
 | API Gateway | Nginx |
-| Email | SMTP gửi email thật tới hộp thư người dùng |
+| Email | SMTP gửi email thật tới hộp thư người dùng (cả OTP đăng ký/xác thực và OTP thanh toán) |
 | API testing | Postman |
 | Automated testing | Pytest |
 | Container | Docker Compose |
@@ -283,7 +287,7 @@ sequenceDiagram
     FE->>Payment: POST /otp/request
     Payment->>User: Lấy email đã xác thực
     User-->>Payment: Email
-    Payment->>Payment: Tạo OTP và gửi email
+    Payment->>Payment: Tạo OTP, lưu hash và gửi qua SMTP
     Customer->>FE: Nhập OTP
     FE->>Payment: POST /otp/verify
     Payment-->>FE: OTP hợp lệ / phiên xác nhận
@@ -443,7 +447,15 @@ Phong cách fintech/banking hiện đại, sáng, tối giản, ưu tiên thông
 - [ ] Có API documentation, automated tests và Docker Compose.
 - [ ] Có kịch bản demo và kết quả kiểm thử.
 
-## 12. Giả định cần xác nhận trước khi code
+## 12. Các quyết định đã xác nhận và giả định cần chốt
+
+### Đã xác nhận
+1. Đề tài chính thức: Loan Installment — F168.
+2. Toàn bộ backend microservices dùng Python + FastAPI.
+3. Email dùng SMTP và phải gửi đến hộp thư thật; không dùng OTP giả/demo chỉ hiển thị trong ứng dụng.
+4. Thanh toán là mô phỏng, không kết nối ngân hàng/cổng thanh toán thật.
+
+### Cần nhóm chốt trước khi code
 
 1. Quy tắc xét duyệt và giới hạn khoản vay là quy tắc demo; nhóm cần chốt con số cụ thể.
 2. Cách tính lãi, lịch đến hạn, làm tròn và xử lý kỳ cuối cần thống nhất.
