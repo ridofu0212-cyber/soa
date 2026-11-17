@@ -20,7 +20,15 @@ Chưa có source code, cấu hình chạy, migrations, test hoặc workflow CI t
 - Không được xem các service/API trong tài liệu thiết kế là đã tồn tại.
 - Tất cả hạng mục triển khai bên dưới bắt đầu ở trạng thái **NOT STARTED**.
 
-## 2. Quy ước trạng thái và cách làm việc
+## 2. Quy định công nghệ đã xác nhận
+
+- Toàn bộ backend services của F168 dùng **Python + FastAPI**.
+- Không dùng Django, Flask, Node.js hoặc ngôn ngữ/framework backend khác cho bất kỳ microservice nào.
+- Frontend là phần riêng; quy định FastAPI áp dụng cho backend.
+- Giữa kỳ và cuối kỳ tiếp tục trên cùng nền tảng FastAPI, không viết lại service bằng framework khác.
+- OTP/email phải đi qua SMTP và được gửi tới hộp thư thật. Không coi việc in OTP ra terminal, trả OTP trong response hoặc hiển thị OTP trực tiếp trên UI là hoàn thành yêu cầu gửi email.
+
+## 3. Quy ước trạng thái và cách làm việc
 
 Dùng các trạng thái:
 - `NOT STARTED`: chưa bắt đầu.
@@ -36,7 +44,7 @@ Một task chỉ chuyển sang DONE khi:
 
 Không đánh dấu DONE chỉ vì đã tạo file hoặc viết endpoint nhưng chưa chạy thử.
 
-## 3. Thứ tự triển khai tổng thể
+## 4. Thứ tự triển khai tổng thể
 
 ~~~mermaid
 flowchart TD
@@ -49,7 +57,7 @@ flowchart TD
     G --> H[Phase 7: Documentation and demo]
 ~~~
 
-## 4. Backlog chi tiết
+## 5. Backlog chi tiết
 
 ### Phase 0 — Xác nhận yêu cầu và công nghệ
 
@@ -77,7 +85,7 @@ flowchart TD
 | P1-03 | Thêm file cấu hình môi trường mẫu | `.env.example`, không commit secrets | NOT STARTED |
 | P1-04 | Thiết lập Docker Compose và PostgreSQL | Các container khởi động được, healthcheck hoạt động | NOT STARTED |
 | P1-05 | Thiết lập Nginx API Gateway | Route thử nghiệm tới service mẫu thành công | NOT STARTED |
-| P1-06 | Tạo skeleton cho từng backend service | Mỗi service có health endpoint và cấu hình riêng | NOT STARTED |
+| P1-06 | Tạo skeleton cho từng backend service bằng FastAPI | Mỗi service có health endpoint và cấu hình riêng | NOT STARTED |
 | P1-07 | Thiết lập logging và error response cơ bản | Log có service/context; không lộ secret/OTP | NOT STARTED |
 | P1-08 | Thiết lập Git workflow | Quy tắc branch, commit, pull request được thống nhất | NOT STARTED |
 
@@ -91,7 +99,7 @@ flowchart TD
 |---|---|---|---|
 | P2-01 | Thiết kế User DB và migrations | users, user_profiles, otp_codes; schema được review | NOT STARTED |
 | P2-02 | Đăng ký tài khoản | Validate dữ liệu, hash mật khẩu, xử lý email trùng | NOT STARTED |
-| P2-03 | Gửi OTP xác thực email | OTP gửi tới email người dùng qua SMTP cấu hình | NOT STARTED |
+| P2-03 | Gửi OTP xác thực email thật | OTP được gửi qua SMTP tới hộp thư người dùng; kiểm thử nhận email thực tế | NOT STARTED |
 | P2-04 | Xác thực OTP email | Đúng/sai/hết hạn/đã dùng được xử lý chính xác | NOT STARTED |
 | P2-05 | Gửi lại OTP | Có giới hạn tần suất và vô hiệu hóa OTP cũ phù hợp | NOT STARTED |
 | P2-06 | Đăng nhập và xác thực phiên | Token/session hoạt động; mật khẩu không lưu dạng rõ | NOT STARTED |
@@ -128,7 +136,7 @@ flowchart TD
 | ID | Công việc | Đầu ra / tiêu chí nghiệm thu | Trạng thái |
 |---|---|---|---|
 | P4-01 | Thiết kế Payment DB và migrations | payment_otps, transactions, idempotency data | NOT STARTED |
-| P4-02 | Yêu cầu OTP thanh toán | OTP gửi tới email đã xác thực, có thời hạn | NOT STARTED |
+| P4-02 | Yêu cầu OTP thanh toán | OTP gửi qua SMTP tới email thật đã xác thực, có thời hạn | NOT STARTED |
 | P4-03 | Xác thực OTP thanh toán | OTP đúng/sai/hết hạn/dùng lại được xử lý | NOT STARTED |
 | P4-04 | Tạo transaction PENDING | Lưu operation ID và idempotency key duy nhất | NOT STARTED |
 | P4-05 | Tích hợp Loan Service | Gọi API validate/settle kỳ, không truy cập Loan DB | NOT STARTED |
@@ -187,7 +195,7 @@ flowchart TD
 | P7-06 | Chuẩn bị demo script | Kịch bản ngắn, có dữ liệu demo và luồng lỗi | NOT STARTED |
 | P7-07 | Chuẩn bị báo cáo thuyết trình | Nêu rõ SOA, service boundary, API, data ownership, consistency | NOT STARTED |
 
-## 5. Các kịch bản nghiệm thu end-to-end bắt buộc
+## 6. Các kịch bản nghiệm thu end-to-end bắt buộc
 
 ### E2E-01 — Đăng ký và xác thực
 1. Customer đăng ký bằng email mới.
@@ -235,7 +243,7 @@ flowchart TD
 
 **Kết quả mong đợi:** backend trả 403/404 phù hợp; không lộ dữ liệu.
 
-## 6. Thứ tự ưu tiên nếu thời gian có hạn
+## 7. Thứ tự ưu tiên nếu thời gian có hạn
 
 1. **Bắt buộc:** Phase 0, Phase 1, đăng ký/OTP/login, gói vay, tạo đơn, auto approval, loan/installments, payment mô phỏng, kiểm thử duplicate payment.
 2. **Quan trọng:** phân quyền đầy đủ, transaction history, admin quản lý sản phẩm, Docker Compose, API documentation.
@@ -243,7 +251,7 @@ flowchart TD
 
 Không giản lược các kiểm tra quyền sở hữu dữ liệu, hash mật khẩu, OTP expiry/one-time-use và chống thanh toán trùng.
 
-## 7. Quy tắc cập nhật roadmap
+## 8. Quy tắc cập nhật roadmap
 
 - Mỗi task cần có người phụ trách và liên kết PR/commit khi bắt đầu triển khai.
 - Chỉ đổi trạng thái sau khi có bằng chứng kiểm tra.
@@ -251,7 +259,7 @@ Không giản lược các kiểm tra quyền sở hữu dữ liệu, hash mật
 - Khi code thực tế khác tài liệu, ưu tiên kiểm chứng implementation và cập nhật tài liệu; không sửa code chỉ để khớp sơ đồ nếu chưa đánh giá tác động.
 - Sau mỗi phase, cập nhật README và ghi lại cách kiểm thử.
 
-## 8. Snapshot ban đầu
+## 9. Snapshot ban đầu
 
 | Hạng mục | Trạng thái tại lần kiểm tra |
 |---|---|
