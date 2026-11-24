@@ -1,0 +1,118 @@
+name: f168
+
+x-db-health: &db-health
+  test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+  interval: 5s
+  timeout: 3s
+  retries: 12
+  start_period: 10s
+
+x-api-health: &api-health
+  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).close()"]
+  interval: 10s
+  timeout: 7s
+  retries: 6
+  start_period: 10s
+
+services:
+  user-db:
+    image: postgres:16.11-bookworm
+    environment:
+      POSTGRES_DB: f168_user
+      POSTGRES_USER: f168_user
+      POSTGRES_PASSWORD: "${USER_DB_PASSWORD:?Create .env and set USER_DB_PASSWORD}"
+    volumes:
+      - user-data:/var/lib/postgresql/data
+    networks: [user-storage]
+    healthcheck: *db-health
+
+  user-service:
+    build: ./services/user_service
+    environment:
+      DB_HOST: user-db
+      DB_PORT: "5432"
+      DB_NAME: f168_user
+      DB_USER: f168_user
+      DB_PASSWORD: "${USER_DB_PASSWORD:?Create .env and set USER_DB_PASSWORD}"
+    depends_on:
+      user-db:
+        condition: service_healthy
+    networks: [services, user-storage]
+    healthcheck: *api-health
+
+  loan-db:
+    image: postgres:16.11-bookworm
+    environment:
+      POSTGRES_DB: f168_loan
+      POSTGRES_USER: f168_loan
+      POSTGRES_PASSWORD: "${LOAN_DB_PASSWORD:?Create .env and set LOAN_DB_PASSWORD}"
+    volumes:
+      - loan-data:/var/lib/postgresql/data
+    networks: [loan-storage]
+    healthcheck: *db-health
+
+  loan-service:
+    build: ./services/loan_service
+    environment:
+      DB_HOST: loan-db
+      DB_PORT: "5432"
+      DB_NAME: f168_loan
+      DB_USER: f168_loan
+      DB_PASSWORD: "${LOAN_DB_PASSWORD:?Create .env and set LOAN_DB_PASSWORD}"
+    depends_on:
+      loan-db:
+        condition: service_healthy
+    networks: [services, loan-storage]
+    healthcheck: *api-health
+
+  payment-db:
+    image: postgres:16.11-bookworm
+    environment:
+      POSTGRES_DB: f168_payment
+      POSTGRES_USER: f168_payment
+      POSTGRES_PASSWORD: "${PAYMENT_DB_PASSWORD:?Create .env and set PAYMENT_DB_PASSWORD}"
+    volumes:
+      - payment-data:/var/lib/postgresql/data
+    networks: [payment-storage]
+    healthcheck: *db-health
+
+  payment-service:
+    build: ./services/payment_service
+    environment:
+      DB_HOST: payment-db
+      DB_PORT: "5432"
+      DB_NAME: f168_payment
+      DB_USER: f168_payment
+      DB_PASSWORD: "${PAYMENT_DB_PASSWORD:?Create .env and set PAYMENT_DB_PASSWORD}"
+    depends_on:
+      payment-db:
+        condition: service_healthy
+    networks: [services, payment-storage]
+    healthcheck: *api-health
+
+  gateway:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile
+    ports: ["127.0.0.1:8080:8080"]
+    networks: [services]
+    depends_on:
+      user-service: {condition: service_healthy}
+      loan-service: {condition: service_healthy}
+      payment-service: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health/gateway"]
+      interval: 10s
+      timeout: 4s
+      retries: 6
+
+networks:
+  services: {}
+  user-storage: {internal: true}
+  loan-storage: {internal: true}
+  payment-storage: {internal: true}
+
+volumes:
+  user-data: {}
+  loan-data: {}
+  payment-data: {}

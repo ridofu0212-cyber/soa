@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+:root { color: #152c46; background: #f4f7fa; font: 16px/1.5 system-ui, sans-serif; }
+header { background: #143554; color: white; }
+.container-line, main { max-width: 920px; margin: auto; padding: 0 24px; }
+.container-line { min-height: 66px; display: flex; gap: 18px; align-items: center; }
+.container-line strong { font-size: 22px; letter-spacing: -.05em; }
+.brand-detail { border-left: 1px solid #71889e; padding-left: 18px; font-size: 15px; }
+main { padding-top: clamp(40px, 7vw, 78px); padding-bottom: 40px; }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 700; letter-spacing: -.045em; line-height: 1.15; }
+.intro { margin: 14px 0 34px; max-width: 620px; color: #4d6277; }
+section { background: white; border: 1px solid #d5e0e8; border-radius: 12px; overflow: hidden; }
+.section-head, .service-row { padding: 19px 24px; }
+.section-head { background: #f9fbfd; }
+h2 { font-size: 20px; font-weight: 650; }
+h3 { font-weight: 650; }
+button { border: 1px solid #9eb3c6; border-radius: 6px; background: white; padding: 6px 12px; cursor: pointer; }
+button:hover { background: #ebf2f8; }
+:focus-visible { outline: 3px solid #1466b8; outline-offset: 2px; }
+.service-row { display: grid; grid-template-columns: 1fr minmax(140px, .65fr) auto; gap: 12px; align-items: center; border-top: 1px solid #e0e7ef; }
+code { color: #586b7f; font-size: 13px; }
+.status { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+.status i { width: 8px; height: 8px; border-radius: 50%; background: #8695a1; }
+.ready i { background: #15835c; }
+.down i { background: #bb4b30; }
+a { color: #14579c; text-decoration: underline; text-underline-offset: 3px; }
+.doc-link { font-size: 14px; }
+@media (max-width: 540px) {
+  .section-head, .service-row { padding: 16px; }
+  .service-row { grid-template-columns: 1fr auto; row-gap: 5px; }
+  .service-row > div { grid-column: 1; grid-row: 1; }
+  .status { grid-column: 1; grid-row: 2; }
+  .doc-link { grid-column: 2; grid-row: 1 / 3; align-self: start; }
+}
